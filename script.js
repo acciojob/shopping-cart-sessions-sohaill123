@@ -29,7 +29,7 @@ function renderCart() {
   cartData.forEach((cartItem) => {
     const product = products.find((p) => p.id === cartItem.id);
     const li = document.createElement("li");
-    li.innerHTML = `${product.name} - $${product.price} <button class="remove-from-cart-btn" data-id="${product.id}">Remove</button>`;
+    li.innerHTML = `${product.name} - $${product.price} x ${cartItem.quantity} <button class="remove-from-cart-btn" data-id="${product.id}">Remove</button>`;
     cartList.appendChild(li);
   });
 }
@@ -37,10 +37,10 @@ function renderCart() {
 // Add item to cart
 function addToCart(productId) {
   let cartData = getCartDataFromSessionStorage();
-  const existingItemIndex = cartData.findIndex((item) => item.id === productId);
+  const existingItem = cartData.find((item) => item.id === productId);
 
-  if (existingItemIndex !== -1) {
-    cartData[existingItemIndex].quantity++;
+  if (existingItem) {
+    existingItem.quantity++;
   } else {
     cartData.push({ id: productId, quantity: 1 });
   }
