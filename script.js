@@ -1,35 +1,99 @@
-// test.spec.js
-describe("Shopping Cart", () => {
-  beforeEach(() => {
-    cy.visit("/");
-  });
+// JavaScript Code (script.js)
+// Product data
+const products = [
+  { id: 1, name: "Product 1", price: 10 },
+  { id: 2, name: "Product 2", price: 20 },
+  { id: 3, name: "Product 3", price: 30 },
+  { id: 4, name: "Product 4", price: 40 },
+  { id: 5, name: "Product 5", price: 50 },
+];
 
-  it("should add items to the cart", () => {
-    cy.get("ul#product-list").children("li").first().children("button").click();
-    cy.get("ul#cart-list").should("contain", "Product 1 - $10 x 1");
-    cy.window()
-      .its("sessionStorage")
-      .invoke("getItem", "cartData")
-      .should("eq", JSON.stringify([{ id: 1, quantity: 1 }]));
-  });
+// DOM elements
+const productList = document.getElementById("product-list");
+const cartList = document.getElementById("cart-list");
 
-  it("should remove items from the cart", () => {
-    cy.get("ul#product-list").children("li").first().children("button").click();
-    cy.get("ul#product-list").children("li").eq(4).children("button").click();
-    cy.get("ul#cart-list").should("have.length", 2);
-    cy.get("ul#cart-list").eq(0).should("contain", "Product 1 - $10 x 1");
-    cy.get("ul#cart-list").eq(1).should("contain", "Product 5 - $50 x 1");
-    cy.window()
-      .its("sessionStorage")
-      .invoke("getItem", "cartData")
-      .should("eq", JSON.stringify([{ id: 1, quantity: 1 }, { id: 5, quantity: 1 }]));
+// Render product list
+function renderProducts() {
+  products.forEach((product) => {
+    const li = document.createElement("li");
+    li.innerHTML = `${product.name} - $${product.price} <button class="add-to-cart-btn" data-id="${product.id}">Add to Cart</button>`;
+    productList.appendChild(li);
   });
+}
 
-  it("should clear the cart", () => {
-    cy.get("ul#product-list").children("li").first().children("button").click();
-    cy.get("ul#product-list").children("li").eq(4).children("button").click();
-    cy.get("button#clear-cart-btn").click();
-    cy.get("ul#cart-list").should("not.exist");
-    cy.window().its("sessionStorage").should("not.have.property", "cartData");
+// Render cart list
+function renderCart() {
+  cartList.innerHTML = ""; // Clear the previous cart items
+
+  const cartData = getCartDataFromSessionStorage();
+  cartData.forEach((cartItem) => {
+    const product = products.find((p) => p.id === cartItem.id);
+    const li = document.createElement("li");
+    li.innerHTML = `${product.name} - $${product.price} <button class="remove-from-cart-btn" data-id="${product.id}">Remove</button>`;
+    cartList.appendChild(li);
   });
+}
+
+// Add item to cart
+function addToCart(productId) {
+  let cartData = getCartDataFromSessionStorage();
+  const existingItemIndex = cartData.findIndex((item) => item.id === productId);
+
+  if (existingItemIndex !== -1) {
+    cartData[existingItemIndex].quantity++;
+  } else {
+    cartData.push({ id: productId, quantity: 1 });
+  }
+
+  setCartDataToSessionStorage(cartData);
+  renderCart();
+}
+
+// Remove item from cart
+function removeFromCart(productId) {
+  let cartData = getCartDataFromSessionStorage();
+  const itemIndex = cartData.findIndex((item) => item.id === productId);
+
+  if (itemIndex !== -1) {
+    cartData.splice(itemIndex, 1);
+    setCartDataToSessionStorage(cartData);
+    renderCart();
+  }
+}
+
+// Clear cart
+function clearCart() {
+  setCartDataToSessionStorage([]);
+  renderCart();
+}
+
+// Utility function to get cart data from session storage
+function getCartDataFromSessionStorage() {
+  const cartDataString = sessionStorage.getItem("cartData");
+  return cartDataString ? JSON.parse(cartDataString) : [];
+}
+
+// Utility function to set cart data to session storage
+function setCartDataToSessionStorage(cartData) {
+  sessionStorage.setItem("cartData", JSON.stringify(cartData));
+}
+
+// Event listener for adding item to cart
+productList.addEventListener("click", (event) => {
+  if (event.target.classList.contains("add-to-cart-btn")) {
+    const productId = parseInt(event.target.dataset.id);
+    addToCart(productId);
+  }
 });
+
+// Event listener for removing item from cart
+cartList.addEventListener("click", (event) => {
+  if (event.target.classList.contains("remove-from-cart-btn")) {
+    const productId = parseInt(event.target.dataset.id);
+    removeFromCart(productId);
+  }
+});
+
+// Initial render
+renderProducts();
+renderCart();
